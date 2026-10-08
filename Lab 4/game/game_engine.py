@@ -9,8 +9,8 @@ class GameEngine:
         self.width = width
         self.height = height
         self.rope = Rope(width, height)
-        self.player = Puller(90, height // 2, (50, 120, 220), "PLAYER (A/D)")
-        self.computer = Puller(width - 90, height // 2, (220, 80, 50), "COMPUTER")
+        self.player = Puller(90, height // 2, (50, 120, 220), "PLAYER (A/D)", facing=1)
+        self.computer = Puller(width - 90, height // 2, (220, 80, 50), "COMPUTER", facing=-1)
 
         self.last_key = None
         self.winner = None
@@ -26,6 +26,12 @@ class GameEngine:
         self.panic_min_cooldown = 130
         self.panic_max_strength = 1.35
         self.panic_level = 0.0
+
+        # Animation state: momentum > 0 favours the computer, < 0 the player.
+        # Both decay each frame so they reflect recent pulling activity.
+        self.momentum = 0.0
+        self.struggle = 0.0
+        self.anim_decay = 0.93
 
         self.font_big = pygame.font.SysFont(None, 48)
         self.font_small = pygame.font.SysFont(None, 26)
@@ -44,6 +50,8 @@ class GameEngine:
             if event.key != self.last_key:
                 self.rope.pull_left(1.0)
                 self.last_key = event.key
+                self.momentum -= 1.0
+                self.struggle += 1.0
 
     def update(self):
         if self.game_state != "PLAYING":
@@ -59,11 +67,28 @@ class GameEngine:
             strength = computer_variance * (1.0 + (self.panic_max_strength - 1.0) * self.panic_level)
             self.rope.pull_right(strength)
             self.last_computer_pull = now
+            self.momentum += strength
+            self.struggle += strength
+
+        self.update_animation()
 
         result = self.rope.check_winner()
         if result:
             self.winner = result
             self.game_state = "GAME_OVER"
+
+    def update_animation(self):
+        """Feed recent pulling activity into rope tension and puller lean."""
+        self.momentum *= self.anim_decay
+        self.struggle *= self.anim_decay
+
+        self.rope.tension = min(1.0, self.struggle / 4.0)
+
+        # Normalised momentum in [-1, 1]; the side winning the pull leans back
+        # hardest, while both keep a slight lean from holding the rope.
+        lean_bias = max(-1.0, min(1.0, self.momentum / 2.0))
+        self.player.lean_toward(0.2 + 0.8 * max(0.0, -lean_bias))
+        self.computer.lean_toward(0.2 + 0.8 * max(0.0, lean_bias))
 
     def compute_panic_level(self):
         """0.0 when calm, rising to 1.0 as the flag nears the player's goal."""
@@ -76,6 +101,11 @@ class GameEngine:
     def reset(self):
         self.rope.reset()
         self.panic_level = 0.0
+        self.momentum = 0.0
+        self.struggle = 0.0
+        self.rope.tension = 0.0
+        self.player.lean = 0.0
+        self.computer.lean = 0.0
         self.last_key = None
         self.winner = None
         self.game_state = "PLAYING"
@@ -88,8 +118,8 @@ class GameEngine:
         pygame.draw.rect(screen, (45, 38, 30), mud_rect, border_radius=12)
 
         self.rope.render(screen)
-        self.player.render(screen)
-        self.computer.render(screen)
+        self.player.render(screen, self.rope.rope_y(self.player.x + self.player.facing * 28))
+        self.computer.render(screen, self.rope.rope_y(self.computer.x + self.computer.facing * 28))
 
         inst_surf = self.font_small.render(
             "Alternate [A] and [D] keys rapidly to pull!", True, (210, 210, 210)
