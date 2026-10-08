@@ -29,13 +29,52 @@ It has **one deliberate bug** and **three optional features** left as tasks to i
 pip install pygame
 ```
 
+> On Python 3.14+, `pygame` may fail to build. Use the drop-in replacement instead: `pip install pygame-ce`.
+
 3. Run the game:
 
 ```bash
 python main.py
 ```
 
-**Controls:** Left-click on the HIGHER or LOWER buttons to predict the next card.   
+**Controls:**
+
+| Key | Action |
+|---|---|
+| `A` / `D` (alternate) | Pull the rope left toward your goal |
+| `R` | Play again from the Game Over screen |
+
+---
+
+## Changes Implemented
+
+| Task | Status | Commit | Files |
+|---|---|---|---|
+| 1. Fix alternating input deadlock | ✅ Done | `1aa6a5f` | `game/game_engine.py` |
+| 2. Dynamic AI panic surges | ✅ Done | `cb29cba` | `game/game_engine.py` |
+| 3. Rope tension & leaning animations | ✅ Done | `d4dd86d` | `game/game_engine.py`, `game/rope.py`, `game/player.py` |
+| 4. Match timer & sudden death | ✅ Done | `d434cf0` | `game/game_engine.py` |
+
+### Task 1: Input deadlock fix
+**Root cause:** each pull set `is_pull_locked = True`, and only the `KEYUP` of that *same* key cleared it. During fast mashing your fingers overlap (D goes down before A comes up), so the overlapping press was dropped, and the next press of the original key was then rejected as "not alternating". About half the presses were lost. If a `KEYUP` was missed entirely (e.g. focus loss), input stayed locked forever.
+
+**Fix:** removed the lock. A pull now registers on every `A`/`D` `KEYDOWN` that differs from the previous pull key. Alternation is still enforced (holding or repeating one key does nothing), but overlapping presses always count and input can never freeze.
+
+### Task 2: AI panic surges
+- `GameEngine.compute_panic_level()` returns `0.0` until the player has dragged the flag **50%** of the way to their goal, then ramps linearly to `1.0` at the goal line.
+- The computer's pull interval shrinks from **180 ms to 130 ms**, and its pull strength grows up to **1.35×**, in proportion to the panic level.
+- A flashing orange **COMPUTER PANIC SURGE!** banner appears at the bottom, blinking faster as panic rises.
+- Tuned so that a fast-mashing player can still win.
+
+### Task 3: Rope tension & leaning animations
+- The engine tracks two decaying values: **momentum** (which side has been pulling more recently) and **struggle** (total recent pulling activity).
+- **Rope** (`Rope.rope_y`): drawn as a polyline. When slack it **sags** in the middle; as struggle rises it pulls taut and **hums** with a travelling vibration. The ends stay pinned and the colour brightens when taut. The flag rides on the rope.
+- **Pullers** (`Puller.lean_toward`): each body tilts back up to 28°. The side holding momentum leans back hardest, and lean is smoothed so motion stays fluid. Arms now reach forward and grip the rope.
+
+### Task 4: Match timer & sudden death
+- A live `TIME MM:SS` timer at the top of the screen. It turns yellow in the final 10 seconds before sudden death and freezes on Game Over.
+- After **45 seconds** with no winner, **Sudden Death** begins: a red **SUDDEN DEATH x2 POWER** banner appears and all pulls (player and computer) are doubled.
+- Pressing `R` resets the timer, sudden death, panic level, and animation state along with the rope.
 
 
 ## Tasks to Complete
