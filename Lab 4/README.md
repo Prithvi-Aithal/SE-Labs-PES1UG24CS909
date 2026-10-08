@@ -50,10 +50,10 @@ python main.py
 
 | Task | Status | Commit | Files |
 |---|---|---|---|
-| 1. Fix alternating input deadlock | ✅ Done | `1aa6a5f` | `game/game_engine.py` |
-| 2. Dynamic AI panic surges | ✅ Done | `cb29cba` | `game/game_engine.py` |
-| 3. Rope tension & leaning animations | ✅ Done | `d4dd86d` | `game/game_engine.py`, `game/rope.py`, `game/player.py` |
-| 4. Match timer & sudden death | ✅ Done | `d434cf0` | `game/game_engine.py` |
+| 1. Fix alternating input deadlock | ✅ Done | `4c1edef` | `game/game_engine.py` |
+| 2. Dynamic AI panic surges | ✅ Done | `041aeb7` | `game/game_engine.py` |
+| 3. Rope tension & leaning animations | ✅ Done | `1cc2473` | `game/game_engine.py`, `game/rope.py`, `game/player.py` |
+| 4. Match timer & sudden death | ✅ Done | `eb430de` | `game/game_engine.py` |
 
 ### Task 1: Input deadlock fix
 **Root cause:** each pull set `is_pull_locked = True`, and only the `KEYUP` of that *same* key cleared it. During fast mashing your fingers overlap (D goes down before A comes up), so the overlapping press was dropped, and the next press of the original key was then rejected as "not alternating". About half the presses were lost. If a `KEYUP` was missed entirely (e.g. focus loss), input stayed locked forever.
