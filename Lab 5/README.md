@@ -52,3 +52,65 @@ The code works, but only just. It has quality, style and security problems of th
 **Target:** aim for a Pylint score above 9.5 on your final file. A perfect 10.00/10 is very good.
 
 Be ready to explain the bugs you found and how you fixed them. You may be called on to present.
+
+---
+
+## Work Done (PES1UG24CS909)
+
+### Results
+
+| Tool | Before | After |
+|------|--------|-------|
+| Pylint | **4.43/10** | **10.00/10** |
+| Bandit | 5 issues (1 High, 1 Medium, 3 Low) | **0 issues** |
+| Flake8 | 36 violations | **0 violations** (empty report) |
+
+### Commits
+
+| Commit | Change |
+|--------|--------|
+| `30b11c4` | Original `billing_system.py` + before reports |
+| `aa27ba6` | **Bandit:** fix all security issues (AES-GCM via `cryptography`, secrets from env, `secrets` module, HTML escaping instead of Mako, no `assert`, `defusedxml`, `hmac.compare_digest`) |
+| `a0b06ed` | **Flake8:** fix all style/formatting issues |
+| `9d8f02d` | **Pylint:** fix code quality issues (naming, docstrings, return-in-finally, literals, `__main__` guard). Score 10.00/10 |
+| `6c1a191` | Fix logic bugs found by running the program that no tool reported (negative invoice, retry count, refund, billing date, proration, trial/expiry off-by-one) |
+
+### Deliverables
+
+| File | Contents |
+|------|----------|
+| [billing_system.py](billing_system.py) | Cleaned and fixed program |
+| [issues.md](issues.md) | Issue table (27 issues: type, lines, description, fix) |
+| [reflection.md](reflection.md) | Answers to the reflection questions |
+| [reports/before/](reports/before/) | `pylint_report.txt`, `bandit_report.txt`, `flake8_report.txt` on the original code |
+| [reports/after/](reports/after/) | The same three reports on the fixed code |
+
+### Running
+
+```bash
+python -m venv venv
+venv\Scripts\activate            # Windows  (source venv/bin/activate on Linux/macOS)
+python -m pip install -r requirements.txt
+python billing_system.py
+```
+
+Optional: set `BILLING_WEBHOOK_SECRET` (string) and `BILLING_CARD_KEY` (64 hex chars = 256-bit key). If unset, a random key is generated for each run.
+
+### Program output after fixes
+
+```
+Trial (14 days from 09-01) over on 09-15? True
+Pro invoice with WELCOME10: 529.94
+Pro invoice with FRIENDS150: 588.82
+Coupon on its expiry day: 529.94
+Next billing after 2026-10-15: 2026-11-15
+Next billing after 2027-01-31: 2027-02-28
+Upgrade pro->team with 10 days left in Feb: 178.57
+Payment attempts (max 3, always failing): 3
+Refund after using 25 of 30 days: 166.5
+Same card, same ciphertext? False
+Webhook verified: True
+Webhook: {'event': 'paid', 'user': 'asha'}
+Invoice HTML: <h1>Invoice for &lt;b onmouseover=alert(1)&gt;ravi&lt;/b&gt;</h1><p>Total: Rs.199</p>
+Coupon: SAVE-XXXXXX   (random each run)
+```
