@@ -82,7 +82,6 @@ Be ready to explain the bugs you found and how you fixed them. You may be called
 | [billing_system.py](billing_system.py) | Cleaned and fixed program |
 | [issues.md](issues.md) | Issue table (27 issues: type, lines, description, fix) |
 | [reflection.md](reflection.md) | Answers to the reflection questions |
-| [pylint_report.txt](pylint_report.txt), [bandit_report.txt](bandit_report.txt), [flake8_report.txt](flake8_report.txt) | Final reports on the fixed code, generated with the handout's commands (`flake8_report.txt` is empty because Flake8 found no issues) |
 | [reports/before/](reports/before/) | `pylint_report.txt`, `bandit_report.txt`, `flake8_report.txt` on the original code |
 | [reports/after/](reports/after/) | The same three reports on the fixed code |
 
