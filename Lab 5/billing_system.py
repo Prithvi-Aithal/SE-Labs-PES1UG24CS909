@@ -6,6 +6,7 @@ import hmac
 import html
 import secrets
 import hashlib
+import calendar
 from datetime import date
 from defusedxml import ElementTree
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
@@ -14,6 +15,7 @@ PLANS = {"basic": 199, "pro": 499, "team": 999}
 GST = 0.18
 TRIAL_DAYS = 14
 MAX_ATTEMPTS = 3
+BILLING_CYCLE_DAYS = 30
 WEBHOOK_SECRET = (os.environ.get("BILLING_WEBHOOK_SECRET")
                   or secrets.token_hex(32))
 if "BILLING_CARD_KEY" in os.environ:
@@ -28,6 +30,8 @@ coupons = {"WELCOME10": {"percent": 10, "expires": date(2026, 12, 31)},
 
 def subscribe(user, plan, start):
     """Start a trial subscription for a user on the given plan."""
+    if plan not in PLANS:
+        raise ValueError(f"Unknown plan: {plan}")
     subscriptions[user] = {"plan": plan, "start": start,
                            "status": "trial", "invoices": []}
     return subscriptions[user]
@@ -35,29 +39,34 @@ def subscribe(user, plan, start):
 
 def is_trial_over(user, today):
     """Return True if the user's free trial has ended by today."""
-    return (today - subscriptions[user]["start"]).days > TRIAL_DAYS
+    return (today - subscriptions[user]["start"]).days >= TRIAL_DAYS
 
 
 def apply_coupon(amount, code, today):
     """Apply a coupon discount to an amount if valid on today."""
     coupon = coupons.get(code)
-    if coupon is None:
+    if coupon is None or not 0 < coupon["percent"] <= 100:
         return amount
-    if today >= coupon["expires"]:
+    if today > coupon["expires"]:
         return amount
     return amount - amount * coupon["percent"] / 100
 
 
 def invoice_amount(user, code=None, today=None):
     """Return the user's invoice total including GST and coupon."""
+    if today is None:
+        today = date.today()
     plan_price = PLANS[subscriptions[user]["plan"]]
     with_tax = plan_price * (1 + GST)
-    return apply_coupon(with_tax, code, today)
+    return round(apply_coupon(with_tax, code, today), 2)
 
 
 def next_billing_date(current):
     """Return the billing date one month after current."""
-    return current.replace(month=current.month + 1)
+    year, month = divmod(current.month, 12)
+    year, month = current.year + year, month + 1
+    day = min(current.day, calendar.monthrange(year, month)[1])
+    return date(year, month, day)
 
 
 def prorate_upgrade(user, new_plan, today, period_end):
@@ -65,26 +74,27 @@ def prorate_upgrade(user, new_plan, today, period_end):
     old = PLANS[subscriptions[user]["plan"]]
     new = PLANS[new_plan]
     days_left = (period_end - today).days
+    days_in_period = calendar.monthrange(today.year, today.month)[1]
     subscriptions[user]["plan"] = new_plan
-    return (new - old) * days_left / 30
+    return round((new - old) * days_left / days_in_period, 2)
 
 
 def retry_payment(charge):
     """Call charge until it succeeds; return the attempts made."""
     attempts = 0
-    while attempts <= MAX_ATTEMPTS:
+    while attempts < MAX_ATTEMPTS:
         attempts += 1
         if charge():
             return attempts
     return attempts
 
 
-def cancel_refund(user, days_used):
-    """Return the refund owed when the user cancels."""
+def cancel_refund(user, days_used, period_days=BILLING_CYCLE_DAYS):
+    """Cancel the subscription and return the refund for unused days."""
     price = PLANS[subscriptions[user]["plan"]]
-    refund = price
-    print("Refund for", days_used, "days")
-    return refund
+    days_unused = max(period_days - days_used, 0)
+    subscriptions[user]["status"] = "cancelled"
+    return round(price * days_unused / period_days, 2)
 
 
 def coupon_code():
@@ -142,6 +152,8 @@ def main():
           invoice_amount("asha", "WELCOME10", date(2026, 12, 31)))
     print("Next billing after 2026-10-15:",
           next_billing_date(date(2026, 10, 15)))
+    print("Next billing after 2027-01-31:",
+          next_billing_date(date(2027, 1, 31)))
     print("Upgrade pro->team with 10 days left in Feb:",
           prorate_upgrade("asha", "team", date(2027, 2, 18),
                           date(2027, 2, 28)))
