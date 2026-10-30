@@ -9,13 +9,3 @@ Lab work for the Software Engineering course at PES University. Labs 1 and 3 fol
 | [Lab 3](Lab%203/) | Architectural pattern selection | A UML component diagram and the case for a microservices architecture (independent scaling of the watermarking pipeline, fault isolation from the payment path) |
 | [Lab 4](Lab%204/) | Debugging and extending a Pygame codebase with an AI pair programmer | Fixed an alternating-input deadlock and added AI panic surges, rope-tension and leaning animations, and a match timer with sudden death, with before/after gameplay videos. See the [Lab 4 README](Lab%204/README.md). |
 | [Lab 5](Lab%205/) | Static code analysis with Pylint, Bandit and Flake8 | Cleaned up a subscription billing system: Pylint 4.43 → 10.00/10, Bandit 5 → 0 issues, Flake8 36 → 0, plus logic bugs found by running the program. Includes before/after reports, an issue table and a reflection. See the [Lab 5 README](Lab%205/README.md). |
-
-## Running the Lab 4 game
-
-```bash
-cd "Lab 4"
-pip install pygame        # on Python 3.14+, use pygame-ce instead
-python main.py
-```
-
-Alternate `A` and `D` to pull the rope, and press `R` to play again from the Game Over screen.
