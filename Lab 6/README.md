@@ -31,6 +31,16 @@ Refer to the lab handout for instructions.
 
 The code coverage tests execute every line, but three decisions were only taken one way: an interior job (`if is_exterior` false), an area that is an exact multiple of a day's work (`if area_sqft % per_day` false), and a job without wallpaper removal. The branch coverage tests add those cases, plus boundary values: area exactly 2000 vs 2001 (discount), cost exactly 5000 vs 4980 (minimum charge), zero coats, negative area, exact litre multiples and one painter.
 
+### Screenshots
+
+**Code coverage** (`coverage run -m pytest CodeCoverageTest_house_painting_quote.py`): 11 passed, 100% line coverage
+
+![Code coverage](screenshots/code_coverage.png)
+
+**Branch coverage** (`coverage run --branch -m pytest BranchCoverageTest_house_painting_quote.py`): 27 passed, 24/24 branches, 100% branch coverage
+
+![Branch coverage](screenshots/branch_coverage.png)
+
 ### Commits
 
 | Commit | Change |
