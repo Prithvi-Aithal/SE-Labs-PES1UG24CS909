@@ -58,7 +58,7 @@ The code coverage tests execute every line, but three decisions were only taken 
 | [CodeCoverageTest_house_painting_quote.py](CodeCoverageTest_house_painting_quote.py) | Test cases for code (line) coverage |
 | [BranchCoverageTest_house_painting_quote.py](BranchCoverageTest_house_painting_quote.py) | Test cases for branch coverage |
 | [coverage_reports/](coverage_reports/) | Full terminal output for the initial, code and branch coverage runs |
-| [screenshots/](screenshots/) | Terminal screenshots of the coverage results |
+| [screenshots/](screenshots/) | Terminal screenshots of the coverage results, and both together in [coverage_screenshots.pdf](screenshots/coverage_screenshots.pdf) |
 
 ### Running
 
